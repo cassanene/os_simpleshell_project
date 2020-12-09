@@ -20,8 +20,8 @@ char delimiters[] = " \t\r\n";
 extern char **environ;
 struct stat sb;
 
-/*
 void echoCmd (char *args[MAX_COMMAND_LINE_ARGS]);
+/*
 void cpCmd (char* src, char* dest);
 void lsCmd ();
 */
@@ -116,6 +116,13 @@ int main() {
             } else {
               cmd = arguments[0];
             }
+          
+            for (j = 1; arguments[j] != NULL; j++) {
+              if (arguments[j][0] == '$') {
+                memmove(arguments[j],arguments[j]+1,strlen(arguments[j]));
+                arguments[j] = getenv(arguments[j]);
+              }
+            }
             
             if (strcmp(cmd, "exit") == 0) { exit(0); }
             else if (strcmp(cmd, "cd") == 0 && arguments[1] != NULL) { cdCmd(arguments); }
@@ -125,7 +132,7 @@ int main() {
               
               //https://stackoverflow.com/a/13098645  ^check if executable
               addBGProc(cmd);
-           } 
+            } 
             else {
               
               pid = fork();
@@ -321,23 +328,47 @@ void killFG (int sigNum) {
 }
 
 /*
+void echoEnv (char *env_variable) {
+  
+  char *cmdEcho = "printenv ";
+  
+  memmove(env_variable,env_variable+1,strlen(env_variable));
+  char *new_env = malloc(strlen(cmdEcho) + strlen(env_variable) + 1);
+  strcpy(new_env,cmdEcho);
+  strcpy(new_env+strlen(cmdEcho),env_variable);
+  
+  system(new_env);
+  free(new_env);
+}
 void echoCmd (char *args[MAX_COMMAND_LINE_ARGS]) {
   
   int k;
-  for (k = 1; k < MAX_COMMAND_LINE_ARGS; k++) {
+  if (args[1] == NULL) {
+    printf(" ");
+  } else {
     
-    if (args[k] == NULL) {
-      break;
-    } else {
-      
-      if(k != 1){
-        printf(" ");
+    for (k = 1; k < MAX_COMMAND_LINE_ARGS; k++) {
+      if (args[k] == NULL) {
+        break;
+      } else {
+        
+        if(k != 1) {
+          printf(" ");
+        }
+        
+        if(args[k][0] == '$') {
+          //echoEnv(args[k]);
+          printf("%s",getenv(args[k]));
+        } else {
+          printf("%s", args[k]);
+        }
       }
-      printf("%s", args[k]);
     }
   }
+  printf("\n");
 }
-
+*/
+/*
 void cpCmd (char* src, char* dest) {
   
   //https://www.geeksforgeeks.org/c-program-copy-contents-one-file-another-file/
@@ -373,11 +404,9 @@ void cpCmd (char* src, char* dest) {
   fclose(fptr2);
   
 }
-
 void lsCmd (void) {
   
   //https://www.geeksforgeeks.org/c-program-list-files-sub-directories-directory/
-
   struct dirent *de;
   DIR *dr = opendir(".");
   
